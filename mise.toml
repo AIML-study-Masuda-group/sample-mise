@@ -1,0 +1,19 @@
+min_version = "2025.9.30"
+
+[tools]
+python    = "3.11.9"
+terraform = "1.7.4"
+uv        = "0.4.20"
+
+[env]
+_.python.venv = { path = ".venv", create = true }
+AWS_PROFILE = "foo"
+AWS_SDK_LOAD_CONFIG = 1
+
+[tasks]
+"py:sync"  = "uv sync --frozen"
+"py:test"  = "uv run pytest -q"
+"tf:init"  = "terraform -chdir=infra init -upgrade"
+"tf:plan"  = "terraform -chdir=infra plan"
+"tf:apply" = "terraform -chdir=infra apply -auto-approve"
+"tf:fmt"   = "terraform -chdir=infra fmt -recursive"

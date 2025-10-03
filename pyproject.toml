@@ -1,0 +1,17 @@
+[project]
+name = "sample-mise"
+version = "0.1.0"
+description = "miseとuvのサンプルプロジェクトになります"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "pandas",
+  "sqlalchemy",
+  "requests"
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "mypy"]
+
+[tool.uv]
+default-groups = ["dev"]
