@@ -4,6 +4,7 @@ min_version = "2025.9.30"
 python    = "3.11.9"
 terraform = "1.7.4"
 uv        = "0.4.20"
+gh        = "2.81.0"
 
 [env]
 _.python.venv = { path = ".venv", create = true }

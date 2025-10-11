@@ -1,4 +1,6 @@
 [tools]
 python = "3.12"
-terraform = "1.8.5"
+terraform = "1.13.3"
+node = "22.20.0"
 uv = "latest"
+gh = "2.81.0"
