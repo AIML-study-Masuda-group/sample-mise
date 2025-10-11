@@ -97,7 +97,9 @@ mise はユーザレベルでの **グローバルなデフォルト設定** を
 
 つまり、ローカルで何も指定しなければユーザ全体で定義しておいたバージョンが使われるというベースラインを作れます。
 
-このリポジトリでは、Node.js を **生成 AI 関連の CLI / SDK（例：OpenAI API クライアントや Vercel AI SDK 等）をコマンドラインから扱う用途** を念頭に追加しています。VS Code の Claude 拡張のように、生成 AI を組み込んだエディタ機能がローカルの Node.js 実行環境を要求する場面でも、そのまま利用できる想定です。Node.js のバージョンが一致していれば、生成 AI ツールが自動生成するスクリプトや CLI がそのまま実行しやすくなります。また `gh`（GitHub CLI）は **Codex や Claude Code といった生成 AI が CLI 経由で Pull Request の作成や Issue 参照を行うケース** を想定して入れています。生成 AI エージェントに `gh` を使わせる場合でも、`mise install` すればローカルの CLI が即座に揃う構成です。
+このリポジトリでは、Node.js を **生成 AI 関連の CLI / SDK（例：OpenAI API クライアントや Vercel AI SDK 等）をコマンドラインから扱う用途** を念頭に追加しています。VS Code の Claude 拡張のように、生成 AI を組み込んだエディタ機能がローカルの Node.js 実行環境を要求する場面でも、そのまま利用できる想定です。Node.js のバージョンが一致していれば、生成 AI ツールが自動生成するスクリプトや CLI がそのまま実行しやすくなります。
+
+また `gh`（GitHub CLI）は **Codex や Claude Code といった生成 AI が CLI 経由で Pull Request の作成や Issue 参照を行うケース** を想定して入れています。生成 AI エージェントに `gh` を使わせる場合でも、`mise install` すればローカルの CLI が基本的にはグローバルのバージョンに従い、即座に揃う構成です(細かく調整したい時は、フォルダ毎のバージョンも指定できます)。
 
 ---
 
@@ -136,11 +138,8 @@ _.python.venv = { path = ".venv", create = true }
 * `[tools]`：プロジェクトで使うツールとバージョンを指定
 * `[env]`：環境変数や venv の自動作成設定など
 * `[tasks]`：そのプロジェクトでよく使うコマンドをミニタスクにまとめておく
-* `gh`（GitHub CLI）：生成 AI（Codex や Claude Code など）が CLI 経由で Pull Request 作成や Issue 閲覧を行う際に使うことを想定してバージョン固定
 
 mise は、ディレクトリ移動時にそのディレクトリか親ディレクトリを見て `mise.toml` を探し、そこで定義されたツールバージョンに自動で切り替えます。([Mise-en-place][2])
-
-例えば、Node.js のバージョンはグローバル設定 (`mise/config.toml`) 側で固定し、**生成 AI が Node.js ベースの CLI やスクリプトを都度生成して実行する** ユースケースを想定しています。`mise use --global node@22.20.0` の状態に揃えておくことで、OpenAI SDK や Vercel AI SDK といった最新パッケージを使ったサンプルを生成 AI がそのまま走らせやすくなります。VS Code の Claude 拡張機能のようにローカルの Node.js ランタイムを要求するケースでも、そのまま使い回せます。
 
 また、`mise install` を実行すると、この `mise.toml` で定義されたツールをインストールします。([Mise-en-place][7])
 
@@ -161,6 +160,8 @@ mise ls-remote python 3.11
 インストール済み／現在有効なバージョンを確認したいときは次のコマンドが便利です：
 
 ```bash
+mise list
+
 # ツールごとにインストール済みバージョンを表示
 mise ls <tool>
 
