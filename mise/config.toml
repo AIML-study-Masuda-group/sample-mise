@@ -1,6 +1,123 @@
+# ==============================================================================
+# グローバル mise 設定
+# ==============================================================================
+# すべてのプロジェクトで共通して使用するツールのバージョンを管理
+# プロジェクト固有の mise.toml がある場合、そちらが優先されます
+# ==============================================================================
+
 [tools]
-python = "3.12"
-terraform = "1.13.3"
-node = "22.20.0"
-uv = "latest"
-gh = "2.81.0"
+# -----------------------------------------------------------------------------
+# Python エコシステム
+# -----------------------------------------------------------------------------
+python    = "3.12.12"       # Python 3.12 最新安定版
+uv        = "0.9.5"         # 高速 Python パッケージマネージャー最新版
+
+# 注意: ruff, mypy は各プロジェクトの pyproject.toml で管理
+#       グローバルに必要な場合は: uv tool install ruff
+
+# -----------------------------------------------------------------------------
+# Infrastructure as Code
+# -----------------------------------------------------------------------------
+terraform = "1.13.4"        # Terraform 最新安定版
+
+# -----------------------------------------------------------------------------
+# Node.js
+# -----------------------------------------------------------------------------
+node      = "22.21.0"       # Node.js 22.x LTS 最新版 主にVSCodeのClaude Code用
+"npm:mmcp" = "latest"       # MCP サーバー管理ツール
+
+# -----------------------------------------------------------------------------
+# CLI ツール
+# -----------------------------------------------------------------------------
+gh        = "2.82.1"        # GitHub CLI 最新版
+yq        = "4.48.1"        # YAML/JSON パーサー最新版
+
+# ==============================================================================
+# グローバル環境変数
+# ==============================================================================
+[env]
+# Python 仮想環境のデフォルト設定
+_.python.venv = { path = ".venv", create = true }
+
+# ==============================================================================
+# グローバルツール管理（uv tool）
+# ==============================================================================
+[tasks.install-global-tools]
+description = "グローバルツールをインストール（ruff, mypy, ipython等）"
+run = """
+  echo "Installing global Python tools..."
+  uv tool install ruff
+  uv tool install mypy
+  uv tool install ipython
+  uv tool install pytest
+  echo "✅ Global tools installed"
+  echo ""
+  echo "Installed tools:"
+  uv tool list
+"""
+
+[tasks.upgrade-global-tools]
+description = "グローバルツールを更新"
+run = "uv tool upgrade --all && echo '✅ Global tools upgraded'"
+
+[tasks.list-global-tools]
+description = "インストール済みグローバルツールを表示"
+run = "uv tool list"
+
+# ==============================================================================
+# Python 開発タスク（プロジェクト内で使用）
+# ==============================================================================
+[tasks.format]
+description = "Python ファイルを Ruff でフォーマット（プロジェクトの .venv 使用）"
+run = "uv run ruff format ."
+
+[tasks.lint]
+description = "Python ファイルを Ruff で lint（プロジェクトの .venv 使用）"
+run = "uv run ruff check ."
+
+[tasks.lint-fix]
+description = "Ruff で自動修正可能な問題を修正（プロジェクトの .venv 使用）"
+run = "uv run ruff check --fix ."
+
+[tasks.typecheck]
+description = "mypy で型チェック（プロジェクトの .venv 使用）"
+run = "uv run mypy ."
+
+# ==============================================================================
+# クリーンアップタスク
+# ==============================================================================
+[tasks.clean-cache]
+description = "Python キャッシュを削除"
+run = """
+  find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+  find . -type d -name .mypy_cache -exec rm -rf {} + 2>/dev/null || true
+  find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
+  find . -type d -name .ruff_cache -exec rm -rf {} + 2>/dev/null || true
+  echo "✅ Python caches cleaned"
+"""
+
+[tasks.clean-venv]
+description = ".venv を削除"
+run = "rm -rf .venv && echo '✅ .venv deleted'"
+
+# ==============================================================================
+# 依存管理タスク
+# ==============================================================================
+[tasks.sync]
+description = "uv で依存パッケージを同期"
+run = "uv sync"
+
+[tasks.sync-dev]
+description = "uv で依存パッケージを同期（dev extras 含む）"
+run = "uv sync --extra dev"
+
+# ==============================================================================
+# mise 管理タスク
+# ==============================================================================
+[tasks.update-tools]
+description = "mise でインストールされているツールを更新"
+run = "mise upgrade && mise prune && echo '✅ Tools updated'"
+
+[tasks.doctor]
+description = "mise の健全性チェック"
+run = "mise doctor"
