@@ -24,13 +24,22 @@ terraform = "1.13.4"        # Terraform 最新安定版
 # Node.js
 # -----------------------------------------------------------------------------
 node      = "22.21.0"       # Node.js 22.x LTS 最新版 主にVSCodeのClaude Code用
-"npm:mmcp" = "latest"       # MCP サーバー管理ツール
+"npm:mmcp" = "0.6.2"        # MCP サーバー管理ツール（v0.6.0+ で replace mode 対応）
+"npm:openskills" = "1.5.0"  # Claude Skills 管理ツール
+"npm:@anthropic-ai/claude-code" = "latest"
+"npm:@withgraphite/graphite-cli" = "1.7.20"  # Stacked PRs 管理ツール
+
+# -----------------------------------------------------------------------------
+# AI エージェント CLI
+# -----------------------------------------------------------------------------
+"npm:@google/gemini-cli" = "latest"     # Google Gemini CLI（無料、100万トークン分析・レビューに強い）
 
 # -----------------------------------------------------------------------------
 # CLI ツール
 # -----------------------------------------------------------------------------
 gh        = "2.82.1"        # GitHub CLI 最新版
 yq        = "4.48.1"        # YAML/JSON パーサー最新版
+git-lfs   = "3.7.1"         # Git Large File Storage（100MB超のバイナリ管理）
 
 # ==============================================================================
 # グローバル環境変数
@@ -38,6 +47,21 @@ yq        = "4.48.1"        # YAML/JSON パーサー最新版
 [env]
 # Python 仮想環境のデフォルト設定
 _.python.venv = { path = ".venv", create = true }
+
+# ==============================================================================
+# Git ツール管理タスク
+# ==============================================================================
+
+[tasks.setup-git-lfs]
+description = "Git LFS をグローバルに有効化（mise install 後に一度だけ実行）"
+run = """
+  git-lfs install
+  echo "✅ Git LFS グローバル設定完了（全リポジトリで有効）"
+  echo ""
+  echo "次のステップ: 対象リポジトリで"
+  echo "  git lfs track 'path/to/largefile'"
+  echo "  git add .gitattributes && git commit"
+"""
 
 # ==============================================================================
 # グローバルツール管理（uv tool）
@@ -121,3 +145,98 @@ run = "mise upgrade && mise prune && echo '✅ Tools updated'"
 [tasks.doctor]
 description = "mise の健全性チェック"
 run = "mise doctor"
+
+# ==============================================================================
+# Graphite CLI（Stacked PRs 管理）
+# ==============================================================================
+# gt はローカル Git 上にブランチの親子関係を記録し、
+# リベースの連鎖や PR base ブランチの更新を自動化する。
+#
+# セットアップ:
+#   1. mise install                     # gt をインストール
+#   2. mise run gt-auth                 # GitHub 認証
+#   3. mise run gt-init                 # リポジトリで初期化
+# ==============================================================================
+
+[tasks.gt-auth]
+description = "Graphite CLI にログイン（GitHub 認証）"
+run = "gt auth --token $(gh auth token)"
+
+[tasks.gt-init]
+description = "現在のリポジトリで Graphite を初期化"
+run = "gt init"
+
+[tasks.gt-create]
+description = "スタック上に新しいブランチを作成（例: mise run gt-create -- feat/my-change）"
+run = "gt create"
+
+[tasks.gt-submit]
+description = "スタック全体を GitHub に push & PR 作成"
+run = "gt submit --stack"
+
+[tasks.gt-restack]
+description = "親 PR の変更を下流に自動リベース"
+run = "gt restack"
+
+[tasks.gt-sync]
+description = "main を取り込んで restack"
+run = "gt sync"
+
+[tasks.gt-log]
+description = "スタック構造を可視化"
+run = "gt log"
+
+# ==============================================================================
+# AI エージェント CLI 管理タスク (Gemini)
+# ==============================================================================
+# Claude Code をメインに、Gemini をサブエージェントとして活用
+#
+# 役割分担:
+#   - Claude Code: メイン開発・オーケストレーター（枯渇しない）
+#   - Gemini CLI:  大規模横断分析（100万トークン）・セカンドオピニオン
+#
+# Gemini が枯渇した場合は Claude に自動フォールバック
+#
+# セットアップ:
+#   1. mise install                        # CLI をインストール
+#   2. mise run cli-install-agents         # インストール確認
+#   3. mise run cli-gemini-login           # Gemini 認証（Googleアカウント）
+# ==============================================================================
+
+[tasks.cli-install-agents]
+description = "AI エージェント CLI（Gemini）のインストール確認"
+run = """
+  echo "🔍 AI エージェント CLI の確認..."
+  echo ""
+  echo "=== Claude Code ==="
+  if command -v claude &>/dev/null; then
+    echo "✅ $(claude --version 2>&1 | head -1)"
+  else
+    echo "❌ 未インストール"
+  fi
+  echo ""
+  echo "=== Gemini CLI ==="
+  if command -v gemini &>/dev/null; then
+    echo "✅ $(gemini --version 2>&1 | head -1)"
+  else
+    echo "❌ 未インストール → mise install を実行"
+  fi
+  echo ""
+  echo "💡 未インストールのツールがある場合: mise install"
+"""
+
+[tasks.cli-gemini-login]
+description = "Gemini CLI にログイン（Googleアカウントで認証・無料）"
+run = """
+  echo "🔐 Gemini CLI 認証..."
+  echo ""
+  if ! command -v gemini &>/dev/null; then
+    echo "❌ Gemini CLI が未インストールです"
+    echo "先に mise install を実行してください"
+    exit 1
+  fi
+  echo "ブラウザが開きます。Googleアカウントでログインしてください。"
+  echo "（無料枠: 60リクエスト/分、1,000リクエスト/日）"
+  echo ""
+  gemini auth login
+"""

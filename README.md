@@ -80,20 +80,7 @@ echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
 
 mise はユーザレベルでの **グローバルなデフォルト設定** を持たせることができます。たとえば、全体として使いたい Python や Terraform のバージョンをここで指定しておき、プロジェクト毎設定がなければこれが使われるようにする、という構成です。
 
-* `~/.config/mise/config.toml` 等にグローバルの `[tools]` セクションを定義。[サンプルはこちら](/mise/config.toml)。実際はローカルユーザーの適切な位置に置いてください。
-
-* たとえば：
-
-  ```toml
-  [tools]
-  python     = "3.12.12"    # Python 3.12 最新安定版
-  uv         = "0.9.5"      # 高速 Python パッケージマネージャー最新版
-  terraform  = "1.13.4"     # Terraform 最新安定版
-  node       = "22.21.0"    # Node.js 22.x LTS 最新版
-  "npm:mmcp" = "latest"     # MCP サーバー管理ツール
-  gh         = "2.82.1"     # GitHub CLI 最新版
-  yq         = "4.48.1"     # YAML/JSON パーサー最新版
-  ```
+* `~/.config/mise/config.toml` 等にグローバルの `[tools]` セクションを定義。**ツールとバージョンの一覧は [mise/config.toml](/mise/config.toml) を参照**（SSoT）。実際はローカルユーザーの `~/.config/mise/config.toml` に置いてください。
 
 * この設定は、プロジェクト内に `mise.toml` がないときに適用されます。
 
@@ -101,67 +88,38 @@ mise はユーザレベルでの **グローバルなデフォルト設定** を
 
 このリポジトリでは、Node.js を **生成 AI 関連の CLI / SDK（例：OpenAI API クライアントや Vercel AI SDK 等）をコマンドラインから扱う用途** を念頭に追加しています。VS Code の Claude 拡張のように、生成 AI を組み込んだエディタ機能がローカルの Node.js 実行環境を要求する場面でも、そのまま利用できる想定です。Node.js のバージョンが一致していれば、生成 AI ツールが自動生成するスクリプトや CLI がそのまま実行しやすくなります。
 
-また `gh`（GitHub CLI）は **Codex や Claude Code といった生成 AI が CLI 経由で Pull Request の作成や Issue 参照を行うケース** を想定して入れています。生成 AI エージェントに `gh` を使わせる場合でも、`mise install` すればローカルの CLI が基本的にはグローバルのバージョンに従い、即座に揃う構成です(細かく調整したい時は、フォルダ毎のバージョンも指定できます)。
+また `gh`（GitHub CLI）は **Claude Code といった生成 AI が CLI 経由で Pull Request の作成や Issue 参照を行うケース** を想定して入れています。生成 AI エージェントに `gh` を使わせる場合でも、`mise install` すればローカルの CLI が基本的にはグローバルのバージョンに従い、即座に揃う構成です(細かく調整したい時は、フォルダ毎のバージョンも指定できます)。
 
 ### グローバルタスクの活用
 
-グローバル設定には、開発でよく使うタスクも定義できます。以下は mise/config.toml で定義されているタスクの例です：
+グローバル設定には、開発でよく使うタスクも定義できます。**タスクの一覧と説明は [mise/config.toml](/mise/config.toml) が正（SSoT）** です。以下のコマンドで確認できます：
 
-**グローバルツール管理:**
 ```bash
-# Python グローバルツール（ruff, mypy, ipython, pytest）をインストール
-mise run install-global-tools
-
-# グローバルツールを一括更新
-mise run upgrade-global-tools
-
-# インストール済みグローバルツールを確認
-mise run list-global-tools
-```
-
-**Python 開発（プロジェクト内で使用）:**
-```bash
-# コードフォーマット（Ruff）
-mise run format
-
-# Lint チェック
-mise run lint
-
-# Lint 自動修正
-mise run lint-fix
-
-# 型チェック（mypy）
-mise run typecheck
-```
-
-**クリーンアップ:**
-```bash
-# Python キャッシュを削除
-mise run clean-cache
-
-# .venv を削除
-mise run clean-venv
-```
-
-**依存管理:**
-```bash
-# 依存パッケージを同期
-mise run sync
-
-# 依存パッケージを同期（dev extras 含む）
-mise run sync-dev
-```
-
-**mise 管理:**
-```bash
-# mise ツールを更新
-mise run update-tools
-
-# mise の健全性チェック
-mise run doctor
+# 利用可能なタスク一覧を表示
+mise tasks
 ```
 
 これらのタスクは、グローバル設定に定義されているため、プロジェクト毎の `mise.toml` がない場合でも実行できます。プロジェクト固有のタスクを定義したい場合は、次のセクションで説明する `mise.toml` にタスクを記述します。
+
+> **注意（Git LFS）**: `mise install` で git-lfs バイナリはインストールされますが、
+> `git lfs install --system` を一度実行しないとグローバルフックが登録されません。
+> 新しいマシンのセットアップ時は `mise run setup-git-lfs` を忘れずに実行してください。
+
+### AI エージェント CLI の活用
+
+mise のグローバル設定で **Gemini CLI** を管理することで、Claude Code のサブエージェントとして活用できます。
+
+**役割分担:**
+| エージェント | 役割 | コスト |
+|---|---|---|
+| **Claude Code** | メイン開発・オーケストレーター | サブスク内 |
+| **Gemini CLI** | 大規模横断分析（100万トークン）・セカンドオピニオン | 無料 |
+
+**設計思想:**
+- Claude Code がメイン。枯渇しないので常に利用可能
+- Gemini はサブエージェントとして Claude から呼ばれる
+- Gemini が枯渇した場合は Claude に自動フォールバック
+- 委譲ワークフローは openskills の Skills で定義（[sample-openskills](https://github.com/scene-live/sample-openskills) 参照）
 
 ---
 
