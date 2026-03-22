@@ -12,7 +12,8 @@
 4. プロジェクト毎設定（`mise.toml`）
 5. uv（Python 依存管理ツール）との連携
 6. GitHub Actions サンプル（プロジェクト毎運用向け）
-7. 補足・注意点
+7. ubi バックエンドによるツール導入
+8. 補足・注意点
 
 ---
 
@@ -327,7 +328,42 @@ jobs:
 
 ---
 
-## 7. 補足・注意点
+## 7. ubi バックエンドによるツール導入
+
+mise のレジストリにないツールでも、GitHub Releases にバイナリを配布していれば `ubi:` プレフィックスで導入できます。`ubi` 自体を事前にインストールする必要はありません（mise が内部的に処理します）。
+
+### 使い方
+
+```bash
+# コマンドラインから追加（グローバル）
+mise use -g "ubi:github/github-mcp-server@0.32.0"
+
+# コマンドラインから追加（プロジェクトローカル）
+mise use "ubi:github/github-mcp-server@0.32.0"
+```
+
+config.toml / mise.toml に直接書く場合:
+
+```toml
+[tools]
+"ubi:github/github-mcp-server" = "0.32.0"
+```
+
+### 実例: GitHub MCP Server
+
+GitHub MCP Server は GitHub API と連携する MCP サーバーです。Claude Desktop や Claude Code から GitHub の操作（PR、Issue、リポジトリ検索等）を行う際に使います。
+
+```bash
+# インストール
+mise install
+
+# 確認
+github-mcp-server --help
+```
+
+---
+
+## 8. 補足・注意点
 
 * **仕様変更に注意**：mise や uv は活発に開発されているため、将来挙動が変わる可能性があります。
 * **mise と uv のバージョン優先順位**：GitHub issue などでは、uv 側が mise 管理バージョンを外部扱いと見なしてしまうケースの報告があります。([GitHub][8])
